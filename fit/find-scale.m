@@ -1,20 +1,39 @@
+(* find-scale.m *)
 
-(* read filename from the command-line options *)
+(* analyzes output from export_hist.m and makes a plot comparing the
+   measured break in the clump size distribution to the predicted
+   value cs*tcool *)
+
+(* usage: mash find-scale.m ../data/frag2048.dat *)
+
+(* since this script works only with binned data, its speed should not
+   depend on simulation resolution *)
+
+
+
+(* first, read filename from the command-line options *)
 If[Length[ARGV] < 2,
    Block[{},
 	 Print["Usage: mash find-scale.m ../data/frag2048.dat"];
 	 Exit[0]]];
 
 fname = ARGV[[2]];
+
+
+CreateDirectory["plots/"];
+
+
+
+(* next, import the data *)
 data = Import[fname];
 
 (* drop headers *)
 data = Select[data, VectorQ[#, NumberQ] &];
 
 (* first line contains resolution, followed by predicted values for cstcool *)
-nres = First[First[data]];
+nres    = First[First[data]];
 cstcool = Rest[First[data]];
-data = Rest[data];
+data    = Rest[data];
 
 (* convert back to {x,y} pairs and drop zeros *)
 data = Transpose[data];
@@ -25,8 +44,9 @@ data = With[{x = First[data], d = Rest[data]},
 data = Map[Select[#, #[[2]] > 0 &] &, data];
 
 
+
 (* make sure we've parsed the file correctly *)
-Export["histogram-check.pdf",
+Export["plots/histogram-check.pdf",
        ListLogLogPlot[data, Joined -> True]];
 
 Print[""];
@@ -41,27 +61,34 @@ Print[cstcool];
 Print[""];
 
 
+
 (* taken from:
 https://mathematica.stackexchange.com/questions/91784/how-to-find-numerically-all-roots-of-a-function-in-a-given-range
 *)
 
+(* Function to automatically find all roots of the function f[x]
+   between the points x1 and x2 *)
 (* NDSolve has an adaptive step size... use it to systematically find
    all the roots of the function.  This is much more reliable than
    using, eg, FindRoot! *)
-
 rootSearchD[f_, x1_, x2_, ops : OptionsPattern[]] :=
     Block[{},
           Last[Last[Reap[
               NDSolve[{y'[x$] == f'[x$], 
-                       y[x1] == f[x1]}, 
+                       y[x1]  == f[x1]}, 
                       y, {x$, x1, x2},
-                      Method -> {"EventLocator", "Event" -> y[x$],
+                      Method -> {"EventLocator", 
+                                 "Event" -> y[x$],
                                  "EventAction" :> Sow[x$]},
                       ops]]]]];
 
 Options[rootSearchD] = Options[NDSolve];
 
 
+(* giant function which analyzes and plots the results for each
+   segment of the simulation *)
+(* for clarity, should probably factor this out into a few different
+   steps! *)
 myplot[d_, prediction_] :=
     Module[{nlm, rng, tpad, bpad},
   
@@ -86,7 +113,7 @@ myplot[d_, prediction_] :=
                     {2 nres, 3 nres}];
   
            (* choose padding so that top and bottom plots line up *)
-           tpad = {{30, 5}, {0, 5}};
+           tpad = {{30, 5}, { 0, 5}};
            bpad = {{30, 5}, {20, 0}};
   
            Column[{
@@ -132,8 +159,8 @@ myplot[d_, prediction_] :=
                              ImageSize        -> 250, 
                              ImagePadding     -> bpad]},
 
-                  Center, Scaled[0.0], ItemSize -> Full]]
+                  Center, Scaled[0.0], ItemSize -> Full]];
 
 p1 = Row[MapThread[myplot, {data, cstcool}]];
 
-Export["scale.pdf", p1, "PDF"];
+Export["plots/scale.pdf", p1, "PDF"];
