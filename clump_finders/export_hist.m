@@ -8,7 +8,7 @@ usage:ListContourPlot[readVTK["merged/out.0020.vtk","pressure",\
 ListStreamPlot[readVTK["merged/out.0020.vtk","velocity","vector"][[1,\
 All,All,{1,2}]]]*)
 readVTK[file_String, label_String, type_String] := 
-  Module[{str, n, data, dim, processLine, 
+  Module[{str, n, data, processLine, 
     readTime},(*helper functions:*)(*-parse lines in the vtk \
 header.*)(*e.g."DIMENSIONS 321 161 161"\[Rule]{321,161,161}*)
    processLine[line_String] := 
@@ -46,144 +46,110 @@ at time= 2.000000e+01, level= 0, domain= 0"\[Rule]20*)
    data = Partition[data, dim[[2]]];
    data];
 
-readdensity[file_] := 
- Module[{densitydata = 
-    readVTK[file, "density", "scalar"][[1, All, All]]}, 
-  Reverse[densitydata]]
+readdensity[file_] :=
+  
+  Module[{densitydata = 
+     readVTK[file, "density", "scalar"][[1, All, All]]},
+   Reverse[densitydata]];
 
+sliceclumps[slice_] :=
+  If[Max[slice] == 1,
+   Map[Length, Select[Split[slice], First[#] == 1 &]] // N,
+   0];
 
-readpressure[file_] := 
- Module[{pressuredata = 
-    readVTK[file, "pressure", "scalar"][[1, All, All]]}, 
-  Reverse[pressuredata]]
+(* return a list of all clumps along the x-direction in a single file \
+*)
+getAllClumpSizesHelper[t_] :=
+  
+  With[{clumplist = Flatten[Map[sliceclumps, t]]},
+   N[Select[clumplist, # > 0 &]]];
 
-readtemp[file_] := readpressure[file]/readdensity[file]
+(* return a list of all clumps in a single file *)
+(* returns a \
+2-element list, first item is simulation time; second item is a list \
+of all clump sizes in the file *)
 
-readvelocity[file_] := 
- Module[{vel = 
-    readVTK[file, "velocity", "vector"][[1, All, All, {1, 2}]]}, 
-  Transpose[vel]]
+getAllClumpSizes[file_] :=
+  
+  Module[{data = readdensity[file], t, allsizes},
+   t = Map[If[# < 0.5, 0, 1] &, data, {2}];
+   allsizes = Join[getAllClumpSizesHelper[t],
+     getAllClumpSizesHelper[Transpose[t]]];
+   
+   {time, allsizes}];
 
-readvx[file_] := 
- Module[{vel = readvelocity[file], vx}, vx = vel[[All, All, 1]];
-  Reverse[Transpose[vx]]]
+(* return a histogram of a list of clump sizes in data with log-x \
+bins *)
+myhistogram[data_] := Block[{bins, y, x},
+   bins = Exp[Range[Log[10], Log[2048], 0.2]];
+   y = BinCounts[data, {bins}];
+   y = y/Total[y] // N;
+   x = ListConvolve[{0.5, 0.5}, bins];
+   Transpose[{x, y}]];
 
-readvy[file_] := 
- Module[{vel = readvelocity[file], vy}, vy = vel[[All, All, 2]];
-  Reverse[Transpose[vy]]]
+(* given a simulation direcotry, return a clump size histogram for \
+each step in the simulation *)
+(* we assume 5 equally-spaced steps in \
+simulation time. *)
+(* returns a list of 5 histograms, one for each \
+step *)
+makeClumpHistograms[dir_] :=
+  
+  Module[{fnames = Drop[FileNames[dir <> "*.vtk"], 1],
+    clumpdata, tlim,
+    seg1, seg2, seg3, seg4, seg5},
+   clumpdata = Map[getAllClumpSizes, fnames];
+   tlim = Last[clumpdata[[All, 1]]];
+   
+   (* simulation is always split into 5 intervals of equal time.  \
+(this may not line up with VTK file numbers if there are restarts!) *)
 
-grad[data_] := 
- Module[{out, x = dx[data], y = dy[data]}, 
-  out = Transpose[{x, y}, {3, 1, 2}];
-  out = out[[2 ;; -2, 2 ;; -2]];
-  out(*=ArrayPad[out,1]*)]
+      seg1 = Select[clumpdata, 0.0 tlim < #[[1]] <= 0.2 tlim &];
+   seg2 = Select[clumpdata, 0.2 tlim < #[[1]] <= 0.4 tlim &];
+   seg3 = Select[clumpdata, 0.4 tlim < #[[1]] <= 0.6 tlim &];
+   seg4 = Select[clumpdata, 0.6 tlim < #[[1]] <= 0.8 tlim &];
+   seg5 = Select[clumpdata, 0.8 tlim < #[[1]] <= 1.0 tlim &];
+   
+   seg1 = Flatten[seg1[[All, 2]]];
+   seg2 = Flatten[seg2[[All, 2]]];
+   seg3 = Flatten[seg3[[All, 2]]];
+   seg4 = Flatten[seg4[[All, 2]]];
+   seg5 = Flatten[seg5[[All, 2]]];
+   
+   Map[myhistogram, {seg1, seg2, seg3, seg4, seg5}]];
 
-baroclinic[fname_] := 
- Module[{gp = 
-    grad[readVTK[fname, "pressure", "scalar"][[1, All, All]] // 
-      Transpose], 
-   gd = grad[
-     readVTK[fname, "density", "scalar"][[1, All, All]] // Transpose],
-    out}, out = -(gp[[All, All, 1]]*gd[[All, All, 2]] - 
-      gp[[All, All, 2]]*gd[[All, All, 1]]);
-  Transpose[ArrayPad[out, 1]]]
+myfmt[num_] := ToString[FortranForm[num]];
 
-vorticity[file_] := 
- Module[{v = 
-    readVTK[file, "velocity", "vector"][[1, All, All, {1, 2}]] // 
-     Transpose, vx, vy, out}, vx = v[[All, All, 1]];
-  vy = v[[All, All, 2]];
-  out = dx[vy] - dy[vx];
-  out = out[[2 ;; -2, 2 ;; -2]];
-  Transpose[ArrayPad[out, 1]]]
+exporthist[dir_, outfile_] :=
+  
+  Module[{data, x, table, fmtd, header, nres, line},
+   data = makeClumpHistograms[dir];
+   (* all 5 histograms have the same x-column; 
+   split off and put it as the first column *)
+   
+   x = data[[1, All, 1]];
+   data = data[[All, All, 2]];
+   
+   table = Prepend[data, x];
+   table = Transpose[table];
+   
+   (* format the numbers and add a header *)
+   
+   fmtd = Map[myfmt, table, {2}];
+   header = {"# [1] = size (cells),", " [n+1] = PDF[n]"};
+   fmtd = Prepend[fmtd, header];
+   
+   (* add information about simulation resolution and cstcool sizes \
+for later analysis *)
+   nres = Max[dim];
+   cstcool = nres/(4^(Range[5] - 1));
+   line = Prepend[cstcool, nres];
+   line = Map[ToString[PaddedForm[#, 10]] &, line];
+   header = {"# [1] = simulation resolution,", " [n+1] = cstcool"};
+   fmtd = Join[{header, line}, fmtd];
+   
+   (* write to file *)
+   Export[outfile, Append[fmtd, {}]]];
 
-sliceclumps[slice_] := 
- If[Max[slice] == 1, 
-  Map[Length, Select[Split[slice], First[#] == 1 &]] // N, 0]
-
-mscale[file_] := Module[{data, t, tmp, bins, b, bins2},
-  data = readdensity[file];
-  t = Map[If[# < 0.5, 0, 1] &, data, {2}];
-  tmp = Flatten[Map[sliceclumps, t]];
-  bins = 10^Range[0, 3, 0.3];
-  b = BinCounts[tmp, {bins}];
-  bins2 = ListConvolve[{0.5, 0.5}, bins];
-  ListLogLogPlot[Transpose[{bins2, b*bins2^2}]]]
-
-meadianmass[file_] := Module[{data, t, tmp, bins, b, bins2},
-  data = readdensity[file];
-  t = Map[If[# < 0.5, 0, 1] &, data, {2}];
-  tmp = Flatten[Map[sliceclumps, t]];
-  tmp = Select[tmp, # > 0 &];
-  Quantile[tmp, 0.95]
-  ]
-
-
-charsize[file_] := Module[{data = readdensity[file], t, tmp},
-  t = Map[If[# < 0.5, 0, 1] &, data, {2}]; 
-  tmp = Flatten[Map[sliceclumps, t]];
-  tmp = Select[tmp, # > 0 &];
-  Mean[N[tmp]]
-  ]
-
-
-maxslice[file_] := Module[{data = readdensity[file], t, tmp},
-  t = Map[If[# < 0.5, 0, 1] &, data, {2}]; 
-  tmp = Flatten[Map[sliceclumps, t]];
-  tmp = Select[tmp, # > 0 &];
-  Max[N[tmp]]
-  ]
-
-hist2[file_] := Module[{data = readdensity[file], t, list},
-  t = Map[If[# < 0.5, 0, 1] &, data, {2}]; 
-  list = Flatten[Map[sliceclumps, t]];
-  list = Select[list, # > 0 &];
-  Histogram[N[list], {"Log", {0.1}}, {"Log", "PDF"}]
-  ]
-
-hist2data[file_] := Module[{data = readdensity[file], t, list},
-  t = Map[If[# < 0.5, 0, 1] &, data, {2}]; 
-  list = Flatten[Map[sliceclumps, t]];
-  list = Select[list, # > 0 &];
-  N[list]]
-
-myhistogram[data_] :=
- Block[{bins, y, x},
-  bins = Exp[Range[Log[10], Log[500], 0.2]];
-  y = BinCounts[data, {bins}];
-  y = y/Total[y] // N;
-  x = ListConvolve[{0.5, 0.5}, bins];
-  Transpose[{x, y}]]
-
-avgclumps[files_] := Module[{data, tmp, x, y},
-  data = Map[hist2data, files];
-  tmp = Map[myhistogram, data];
-  x = tmp[[1, All, 1]];
-  tmp = Map[#[[All, 2]] &, tmp];
-  y = Map[Mean, Transpose[tmp]];
-  Transpose[{x, y}]
-  ]
-
-clumpcurves[filenames_] := 
- Module[{step0, step1, step2, step3, step4, data0, data1, data2, 
-   data3, data4, grouped},
-  step0 = filenames[[1 ;; 21]];
-  step1 = filenames[[22 ;; 41]];
-  step2 = filenames[[42 ;; 61]];
-  step3 = filenames[[62 ;; 81]];
-  step4 = filenames[[82 ;; 101]];
-  grouped = List[step0, step1, step2, step3, step4];
-  Map[avgclumps, grouped]
-  ]
-
-myfmt[num_] := ToString[PaddedForm[num, {10, 6}]]
-
-exporthist[files_] := Module[{data, x, arranged, fmtd, header},
-  data = clumpcurves[files];
-  x = data[[1, All, 1]];
-  arranged = Transpose[RotateRight[Append[data[[All, All, 2]], x]]];
-  fmtd = Map[myfmt, arranged, {2}];
-  header = {"# [1] = size (cells)", " [n+1] = PDF[n]"};
-  Export["/Users/NeerajAir/clumpfind_repo/data/frag2048.dat",
-   Append[Prepend[fmtd, header], {}]]
-  ]
+dir = "/Volumes/Neerajstoarage/simulationdata/bigstepfrag/1024/norst/";
+exporthist[dir, "test.dat"];
