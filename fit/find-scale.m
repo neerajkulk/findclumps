@@ -1,4 +1,12 @@
-data = Import["../data/frag2048.dat"];
+
+(* read filename from the command-line options *)
+If[Length[ARGV] < 2,
+   Block[{},
+	 Print["Usage: mash find-scale.m ../data/frag2048.dat"];
+	 Exit[0]]];
+
+fname = ARGV[[2]];
+data = Import[fname];
 
 (* drop headers *)
 data = Select[data, VectorQ[#, NumberQ] &];
