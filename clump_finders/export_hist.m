@@ -130,7 +130,7 @@ myhistogram[data_] :=
 makeClumpHistograms[dir_] :=
     Module[{fnames = Drop[FileNames[dir <> "*.vtk"], 1],
             clumpdata, tlim,
-            seg1, seg2, seg3, seg4, seg5},
+            segments},
            clumpdata = Map[getAllClumpSizes, fnames];
            tlim = Last[clumpdata[[All, 1]]];
 
@@ -138,19 +138,19 @@ makeClumpHistograms[dir_] :=
               time. (this may not line up with VTK file numbers if
               there are restarts!) *)
 
-           seg1 = Select[clumpdata, 0.0 tlim < #[[1]] <= 0.2 tlim &];
-           seg2 = Select[clumpdata, 0.2 tlim < #[[1]] <= 0.4 tlim &];
-           seg3 = Select[clumpdata, 0.4 tlim < #[[1]] <= 0.6 tlim &];
-           seg4 = Select[clumpdata, 0.6 tlim < #[[1]] <= 0.8 tlim &];
-           seg5 = Select[clumpdata, 0.8 tlim < #[[1]] <= 1.0 tlim &];
+           (* start by splitting into five segments based on
+              simulation time *)
+           segments = Table[Select[clumpdata,
+                                   ((i-1)/5.0) tlim < #[[1]] <= (i/5.0) tlim &],
+                            {i,5}]
 
-           seg1 = Flatten[seg1[[All, 2]]];
-           seg2 = Flatten[seg2[[All, 2]]];
-           seg3 = Flatten[seg3[[All, 2]]];
-           seg4 = Flatten[seg4[[All, 2]]];
-           seg5 = Flatten[seg5[[All, 2]]];
+           (* remove the time elements and flatten each segment into
+              one big list of clump sizes *)
+           segments = Map[Flatten[#[[All,2]]]&, segments];
 
-           Map[myhistogram, {seg1, seg2, seg3, seg4, seg5}]];
+           (* now, calculate the histogram for each segment and return
+              *)
+           Map[myhistogram, segments]];
 
 
 
@@ -159,7 +159,7 @@ myfmt[num_] := ToString[FortranForm[num]];
 
 
 
-(*  *)
+(* clean up the data write it to a file *)
 exporthist[dir_, outfile_] :=
     Module[{data, x, table, fmtd, header, nres, line},
            data = makeClumpHistograms[dir];
