@@ -154,9 +154,17 @@ makeClumpHistograms[dir_] :=
 
 
 
-(* @#*$& Mathematica and its number format *)
-myfmt[num_] := ToString[FortranForm[num]];
+(* format numbers for printing to a text file. *)
+(* whyyyyyy is this so hard in mathematica??? *)
+myfmt1[num_] := NumberForm[num, {10, 4}, NumberPadding -> {" ", "0"}];
 
+myfmt2[num_] := ScientificForm[num, {10, 4},
+                               NumberPadding -> {" ", "0"},
+                               NumberFormat -> (#1 <> "e" <> #3 &)];
+
+myfmt[num_] := If[Abs[Log[10, num]] >= 3,
+                  myfmt2[num],
+                  myfmt1[num]] // ToString
 
 
 (* clean up the data write it to a file *)
