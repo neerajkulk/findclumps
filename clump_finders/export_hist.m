@@ -111,8 +111,7 @@ getAllClumpSizes[file_] :=
 (* return a histogram of a list of clump sizes in data with log-x bins *)
 myhistogram[data_] :=
     Block[{bins, y, x},
-          bins = Exp[Range[Log[10], Log[2048], 0.2]];
-
+          bins = Exp[Range[Log[10], Log[Max[dim]], N[1/29*Log[Max[dim]/10.0]]]];
           (* bin clump data and normalize *)
           y = BinCounts[data, {bins}];
           y = y/Total[y] // N;
