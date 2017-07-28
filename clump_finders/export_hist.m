@@ -162,9 +162,10 @@ myfmt2[num_] := ScientificForm[num, {10, 4},
                                NumberPadding -> {" ", "0"},
                                NumberFormat -> (#1 <> "e" <> #3 &)];
 
-myfmt[num_] := If[Abs[Log[10, num]] >= 3,
-                  myfmt2[num],
-                  myfmt1[num]] // ToString
+myfmt[num_] := ToString[
+                        If[num != 0 && Abs[Log[10, num]] >= 3,
+                           myfmt2[num],
+                           myfmt1[num]]];
 
 
 (* clean up the data write it to a file *)
