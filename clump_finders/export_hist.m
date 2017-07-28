@@ -142,7 +142,7 @@ makeClumpHistograms[dir_] :=
               simulation time *)
            segments = Table[Select[clumpdata,
                                    ((i-1)/5.0) tlim < #[[1]] <= (i/5.0) tlim &],
-                            {i,5}]
+                            {i,5}];
 
            (* remove the time elements and flatten each segment into
               one big list of clump sizes *)
