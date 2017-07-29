@@ -117,7 +117,7 @@ myhistogram[data_] :=
           y = y/Total[y] // N;
 
           (* average bins *)
-          x = ListConvolve[{0.5, 0.5}, bins];
+          x = Exp[ListConvolve[{0.5, 0.5}, Log[bins]]];
           Transpose[{x, y}]];
 
 
