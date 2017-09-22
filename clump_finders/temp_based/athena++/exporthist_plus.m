@@ -70,15 +70,17 @@ sliceclumps[slice_] :=
 
   (*function to read time for athena++ athdf files*)
 
-  readhdf5time[file_] :=
- 
-  Block[{str = OpenRead[file, BinaryFormat -> True], line},
-	line = Find[str, "Time"];
-	Close[str];
-	line = StringSplit[line, "Time"][[-1]];
-	str = StringToStream[line];
-	SetStreamPosition[str, 36];
-	BinaryRead[str, "Real64", ByteOrdering -> +1]]
+readhdf5time[file_] := 
+ Block[{str = OpenRead[file, BinaryFormat -> True], line}, 
+  line = Find[str, "Time"];
+  SetStreamPosition[str, StreamPosition[str] - StringLength[line]];
+  line = BinaryReadList[str, "Character8", 256] // StringJoin;
+  Close[str];
+  
+  line = StringSplit[line, "Time"][[-1]];
+  str = StringToStream[line];
+  SetStreamPosition[str, 36];
+  BinaryRead[str, "Real64", ByteOrdering -> +1]]
 
   (*return a list of all clumps in a single file*)
   (*returns a \
