@@ -79,8 +79,8 @@ def findclumps(fname):
     c_t = Counter(flat_list_t)
 
     # write clumps to file
-    filename = 'output.clumps'
-    filename_t = 'output_t.clumps'
+    filename = fname + '.clumps'
+    filename_t = fname + '.t.clumps'
     
     with open (filename, 'w') as f:
         f.write("# time = {0}\n".format(c_time))
@@ -104,7 +104,7 @@ def findclumps(fname):
 
 
 
-findclumps("/Volumes/LaCie/simdata/test_run/shatter.out3.00028.athdf")
+findclumps('/Volumes/LaCie/simdata/test_run/shatter.out3.00028.athdf')
             
             
 
