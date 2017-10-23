@@ -104,7 +104,7 @@ def findclumps(fname):
 
 
 
-findclumps('/Volumes/LaCie/simdata/test_run/shatter.out3.00028.athdf')
+#findclumps('/Volumes/LaCie/simdata/test_run/shatter.out3.00028.athdf')
             
             
 
@@ -180,11 +180,21 @@ findclumps('/Volumes/LaCie/simdata/test_run/shatter.out3.00028.athdf')
 
     
 import glob
-import os
+import os.path
 
-files = glob.glob("*.athdf")
+files = glob.glob('/Volumes/LaCie/simdata/test_run/*.athdf')
 
 for file in files:
-    pre, ext = os.path.splittext(file)
-    if not (file_exists(pre + '.clumps')):
-        analyze(file)
+    if not (os.path.isfile(file + '.clumps') and os.path.isfile(file + '.t.clumps')):
+        findclumps(file)
+
+
+# for file in files:
+#     pre, ext = os.path.splittext(file)
+#     if not (file_exists(pre + '.clumps')):
+#         analyze(file)
+
+
+#os.path.isfile(fname)         
+#https://stackoverflow.com/questions/82831/how-do-i-check-whether-a-file-exists-using-python
+
