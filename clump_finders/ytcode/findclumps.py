@@ -70,35 +70,32 @@ def findclumps(fname):
     resolution = tdata.shape[0]
 
     clumpdata = [ sliceclumps(slice) for slice in tdata ]  #map slice clumps over thresholded data
-    clumpdatat = [ sliceclumps(slice) for slice in np.transpose(tdata) ]  #map slice clumps over thresholded data
+    clumpdata_t = [ sliceclumps(slice) for slice in np.transpose(tdata) ]  #map slice clumps over thresholded data
     
-#    allclumps = np.concatenate((clumpdatat,clumpdata))
+    flat_list = [item for sublist in clumpdata for item in sublist] #flatten the list
+    flat_list_t = [item for sublist in clumpdata_t for item in sublist] #flatten the list
 
-
-    flat_listx = [item for sublist in clumpdata for item in sublist] #flatten the list
-    flat_listy = [item for sublist in clumpdatat for item in sublist] #flatten the list
-
-    cx = Counter(flat_listx)
-    cy = Counter(flat_listy)
+    c = Counter(flat_list)
+    c_t = Counter(flat_list_t)
 
     # write clumps to file
-    filenamex = 'outputx.clumps'
-    filenamey = 'outputy.clumps'
+    filename = 'output.clumps'
+    filename_t = 'output_t.clumps'
     
-    with open (filenamex, 'w') as f:
+    with open (filename, 'w') as f:
         f.write("# time = {0}\n".format(c_time))
         f.write("# res = {0}\n".format(resolution))
         f.write("# mintemp = {0}\n".format(tempdata.min()))
         f.write("# [1] = size, [2] = count\n")
-        for (size, count) in cx.items():
+        for (size, count) in c.items():
             f.write("{0}\t{1}\n".format(size, count))
 
-    with open (filenamey, 'w') as f:
+    with open (filename_t, 'w') as f:
         f.write("# time = {0}\n".format(c_time))
         f.write("# res = {0}\n".format(resolution))
         f.write("# mintemp = {0}\n".format(tempdata.min()))
         f.write("# [1] = size, [2] = count\n")
-        for (size, count) in cy.items():
+        for (size, count) in c_t.items():
             f.write("{0}\t{1}\n".format(size, count))
 
 
