@@ -109,9 +109,9 @@ def findclumps(fname):
 
 #findclumps('/Volumes/LaCie/simdata/test_run/shatter.out3.00028.athdf')
 
-#TESTING PARALLELIZING CODE
+#parallelize and map over all clumps
 
-num_procs = 68
+num_procs = 4 # use 64 for stampede 
 my_storage = {}
 
 files = glob.glob('/Volumes/LaCie/simdata/test_run/*.athdf')
@@ -122,89 +122,3 @@ for sto, file in yt.parallel_objects(files, num_procs, storage = my_storage):
         findclumps(file)
         
     
-
-
-            
-
-
-
-
-
-
-
-# BUNCH OF ARCHIVED CODE!!!!!!
-
-   # flat_list = [item for sublist in tdata for item in sublist]
-   # print('number of zeros and ones')
-   # print(Counter(flat_list))
-
-    # clumpdata = [ sliceclumps(slice) for slice in tdata ]  #map slice clumps over thresholded data
-    # print(length(clumpdata))
-    # clumpdatat = [ sliceclumps(slice) for slice in np.transpose(tdata) ]  #map slice clumps over thresholded data
-    # allclumps = np.concatenate((clumpdatat,clumpdata))
-    # flat_list = [item for sublist in allclumps for item in sublist] #flatten the list
-    # c = Counter(flat_list)
-    # filename = 'output.clumps'
-    
-    # with open (filename, 'w') as f:
-    #     f.write("# time = {0}\n".format(c_time))
-    #     f.write("# res = {0}\n".format(resolution))
-    #     f.write("# [1] = size, [2] = count\n")
-    #     for (size, count) in c.items():
-    #         f.write("{0}\t{1}\n".format(size, count))
-
-
-
-    
-# NOW START SLICING
-#data = map(sliceclumps,t)
-#data = [ sliceclumps(slice) for slice in t ]  #map slice clumps over thresholded data
-#flat_list = [item for sublist in data for item in sublist] #flatten the list
-
-# from collections import Counter
-# c = Counter(flat_list)
-
-# # read these from file
-# time = 4.0
-# resolution = 4096
-
-# filename = 'output.clumps'
-
-# with open (filename, 'w') as f:
-#     f.write("# time = {0}\n".format(time))
-#     f.write("# res = {0}\n".format(resolution))
-#     f.write("# [1] = size, [2] = count\n")
-#     for (size, count) in c.items():
-#         f.write("{0}\t{1}\n".format(size, count))
-
-
-    # t = temperature
-    # tmin = 0.1
-    # t[t < tmin] = 1.0
-    # t[t > tmin] = 0.0
-    # num_zeros = (t == 0.0).sum()
-    # num_ones = (t == 1.0).sum()
-    # t = t[0:,0:,0]
-    # print(t.shape)
-    # np.savetxt("%s_density" % ds.basename, density)
-    # t=np.array([0,0,1,1,1,0,0,0,1,1,1,1,1,1,0,0])
-    # lw, num = measurements.label(t)
-    # print(lw)
-    # area = measurements.sum(t, lw, index=range(lw.max() + 1))
-    # print(area)
-    # print(t)
-
-    # look for scikit-image resize with antialiasing
-
-    
-
-
-# for file in files:
-#     pre, ext = os.path.splittext(file)
-#     if not (file_exists(pre + '.clumps')):
-#         analyze(file)
-
-
-#os.path.isfile(fname)         
-#https://stackoverflow.com/questions/82831/how-do-i-check-whether-a-file-exists-using-python
-
