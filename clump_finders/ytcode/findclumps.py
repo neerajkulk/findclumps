@@ -1,4 +1,7 @@
+import glob
+import os.path
 import yt
+yt.enable_parallelism()
 import numpy as np
 from scipy.ndimage import measurements
 
@@ -105,7 +108,22 @@ def findclumps(fname):
 
 
 #findclumps('/Volumes/LaCie/simdata/test_run/shatter.out3.00028.athdf')
-            
+
+#TESTING PARALLELIZING CODE
+
+num_procs = 68
+my_storage = {}
+
+files = glob.glob('/Volumes/LaCie/simdata/test_run/*.athdf')
+
+
+for sto, file in yt.parallel_objects(files, num_procs, storage = my_storage):
+    if not (os.path.isfile(file + '.clumps') and os.path.isfile(file + '.t.clumps')):
+        findclumps(file)
+        
+    
+
+
             
 
 
@@ -179,14 +197,6 @@ def findclumps(fname):
     # look for scikit-image resize with antialiasing
 
     
-import glob
-import os.path
-
-files = glob.glob('/Volumes/LaCie/simdata/test_run/*.athdf')
-
-for file in files:
-    if not (os.path.isfile(file + '.clumps') and os.path.isfile(file + '.t.clumps')):
-        findclumps(file)
 
 
 # for file in files:
