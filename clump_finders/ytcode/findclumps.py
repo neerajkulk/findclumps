@@ -81,10 +81,11 @@ def findclumps(fname):
     c = Counter(flat_list)
     c_t = Counter(flat_list_t)
 
-    # write clumps to file
+
+    # write clumps to file                                                                                           
     filename = fname + '.clumps'
     filename_t = fname + '.t.clumps'
-    
+
     with open (filename, 'w') as f:
         f.write("# time = {0}\n".format(c_time))
         f.write("# res = {0}\n".format(resolution))
@@ -92,6 +93,8 @@ def findclumps(fname):
         f.write("# [1] = size, [2] = count\n")
         for (size, count) in c.items():
             f.write("{0}\t{1}\n".format(size, count))
+        f.write("all_clumps_found")
+        f.close()
 
     with open (filename_t, 'w') as f:
         f.write("# time = {0}\n".format(c_time))
@@ -100,25 +103,23 @@ def findclumps(fname):
         f.write("# [1] = size, [2] = count\n")
         for (size, count) in c_t.items():
             f.write("{0}\t{1}\n".format(size, count))
-
-
+        f.write("all_clumps_found")
+        f.close()
     return
 
 
 
 
-#findclumps('/Volumes/LaCie/simdata/test_run/shatter.out3.00028.athdf')
+#findclumps('/Volumes/LaCie/simdata/test_run/shatter.out3.00028.athdf')                                              
 
-#parallelize and map over all clumps
+#parallelize and map over all clumps                                                                                 
 
-num_procs = 4 # use 64 for stampede 
+num_procs = 64 # use 64 for stampede                                                                                 
 my_storage = {}
 
-files = glob.glob('/Volumes/LaCie/simdata/test_run/*.athdf')
+files = glob.glob('/scratch/04325/neerajk/production_runs/thin_8192/*.athdf')
 
 
 for sto, file in yt.parallel_objects(files, num_procs, storage = my_storage):
     if not (os.path.isfile(file + '.clumps') and os.path.isfile(file + '.t.clumps')):
         findclumps(file)
-        
-    
