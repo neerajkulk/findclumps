@@ -43,9 +43,10 @@ def get_time(filename):
 
 def temp_plus(filename):
     ds = yt.load(filename)
+    amr_factor = np.array([2**ds.max_level,2**ds.max_level,1])
     my_grid = ds.covering_grid(level=ds.max_level,
                                left_edge=ds.domain_left_edge,
-                               dims=ds.domain_dimensions,
+                               dims=ds.domain_dimensions * amr_factor,
                                fields=["density", "pressure"])
     temp=my_grid["pressure"]/my_grid["density"]
     return np.array(temp)[0:,0:,0]
