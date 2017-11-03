@@ -6,7 +6,7 @@ import numpy as np
 def mkpic(fname):
     # make a 1024^2 image of simulation domain                                                                                             
     ds = yt.load(fname)
-    dim = ds.domain_dimensions[0]*ds.max_level
+    dim = ds.domain_dimensions[0]*(2**ds.max_level)
     slc = yt.SlicePlot(ds, 'z', 'density')
     slc.set_cmap('density', 'binary')
     slc.set_buff_size(1024)
