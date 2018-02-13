@@ -4,18 +4,16 @@ yt.enable_parallelism()
 import numpy as np
 
 def mkpic(fname):
-    # make a 1024^2 image of simulation domain                                                                                             
+    # make a 2048^2 image of simulation domain for making movies (no colorbar or axes)                                                                                            
     ds = yt.load(fname)
     dim = ds.domain_dimensions[0]*(2**ds.max_level)
     slc = yt.SlicePlot(ds, 'z', 'density')
     slc.set_cmap('density', 'binary')
-    slc.set_buff_size(1024)
-    slc.save(fname + '.png')
-    # show a 2048 image of the center of simulation domain                                                                                 
     slc.set_buff_size(2048)
-    slc.zoom(dim/2048)
-    slc.save(fname + '.zoom.png')
-    return
+    slc.hide_colorbar()
+    slc.hide_axes()
+    slc.save(fname + '.png')
+    # show a 2048 image of the center of simulation domain                                                                                return
 
 #mkpic("/Volumes/LaCie/simdata/production_runs/thin_8192/shatter.out3.00080.athdf")                                                        
 
