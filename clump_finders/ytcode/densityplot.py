@@ -3,7 +3,7 @@ import yt
 yt.enable_parallelism()
 import numpy as np
 
-def mkpic(fname):
+def densplot(fname):
     # make a 1024^2 image of simulation domain                                                                                             
     ds = yt.load(fname)
     dim = ds.domain_dimensions[0]*(2**ds.max_level)
@@ -27,7 +27,7 @@ files = glob.glob('/scratch/04325/neerajk/production_runs/32768thick/*athdf')
 
 
 for sto, file in yt.parallel_objects(files, num_procs, storage = my_storage):
-    mkpic(file)
+    densplot(file)
 
 
 
